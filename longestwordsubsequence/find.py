@@ -4,6 +4,8 @@
 # which is the longest among the ones that you can
 # find in S
 
+# Solution 1
+
 import time # for execution time
 
 # data
