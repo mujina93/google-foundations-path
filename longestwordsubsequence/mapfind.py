@@ -7,6 +7,7 @@
 # Solution 2
 
 import time # for execution time
+from math import floor
 
 # data
 def init():
@@ -45,8 +46,25 @@ def decompose(S):
         print(letter, position_list)
     return map
 
+def smallest_bigger_binsearch(olist, key, smallest_bigger=None):
+    # O(log(len(olist)))
+    L = 0
+    R = len(olist)
+    C = floor((L+R)/2) # middle point
+    #print("key: ",key)
+    #print("bin: ",C," ",olist[C])
+    if olist[C] > key:
+        smallest_bigger = olist[C]
+        #print("new smallest bigger: ",smallest_bigger)
+        if R - L > 1: # if there is room for searching
+            smallest_bigger = smallest_bigger_binsearch(olist[L:C], key, smallest_bigger) # look left to find smaller bigger values
+    elif olist[C] <= key: 
+        if R - L > 1: # if there is room for searching
+            smallest_bigger = smallest_bigger_binsearch(olist[C:R], key, smallest_bigger) # look right to start finding bigger values
+    return smallest_bigger
+
 def mapfind(S,D):
-    # O(len(S)+len(D))
+    # O(len(S)+len(D)+len(S)+len(D)*log(len(S))) = O(len(S) + len(D)*log(len(S)))
 
     # clean and sort words (longer sooner)
     D = clean(S,D)  # O(len(S)+len(D))
@@ -55,27 +73,26 @@ def mapfind(S,D):
     map = decompose(S) # O(len(S))
 
     # look if the word is a substring of S by queriend the map
-    for word in D:  # O(len(D)*const)
+    for word in D:  # O(len(D)*...)
         print("CHECK: "+word)
         found_valid = False
+        index_of_last_valid_letter = -1
         for j,letter in enumerate(word):
             print(letter)
-            index_of_last_letter = -1
             if letter in map:
                 where_in_S = map[letter] # positions of 'letter' in S. One or more may be 'valid'.
                 print("is present at ",where_in_S)
                 found_valid = False
                 # look for the first valid letter (the letter must be in S, and it must be
                 # it must come after the last valid letter that was found in S)
-                for i in where_in_S:
-                    if i > index_of_last_letter:
-                        index_of_last_letter = i # found a letter which is after the last one (in S)
-                        found_valid = True
-                        print("valid position found")
-                        break   # no need for going on
-                if not found_valid: # no valid letter was found
+                index_of_next_valid_letter = smallest_bigger_binsearch(where_in_S, index_of_last_valid_letter) # O(log(len(where_in_S))) ~ O(log(len(S)))
+                if index_of_next_valid_letter is None: # you did not find a next valid letter
                     print("no valid letter was found. Stop searching for this word.")
                     break # exit the for letter in word loop, i.e. stop considering this word, it's not there
+                else: # you found a next valid letter
+                    index_of_last_valid_letter = index_of_next_valid_letter # remember this index
+                    found_valid = True # you found a valid one
+                    print("valid position found: ",index_of_last_valid_letter)
             else:
                 print("no such letter in the string")
                 break
