@@ -6,11 +6,10 @@
 # which is the longest among the ones that you can
 # find in S
 
-# Solution 2
-# mapping S to a map<letter,ordered_occurrency_list> for fast lookup
-# and employing a binary search on ordered_occurency_list to find indexes faster
+# Solution 3
+#
 
-import time # for execution time
+import time
 from math import floor
 
 # data
@@ -38,63 +37,54 @@ def clean(S,D):
 # build a map of S, a dictionary representing the information
 # in the most efficient way possible for our problem
 def decompose(S):
-    # O(len(S))
-    print("Creating a positional map out of "+S+" (alternative representation for the string):")
+    # O(N*A)
+    # A = length of alphabet used to write S
+    # N = length of S
+
+    N = len(S)
+    print("Creating a dense map out of "+S+" (alternative dense representation for the string):")
     map = {}
-    for i, letter in enumerate(S):
-        if letter in map:
-            map[letter].append(i)
-        else:
-            map[letter] = [i]
+    logical_lengths = {}
+    for i,letter in enumerate(S):
+        if letter not in map:
+            map[letter] = [-1]*N
+            logical_lengths[letter] = 0
+        for k in range(logical_lengths[letter],i):
+            map[letter][k] = i
+        logical_lengths[letter] = i
+    # dump
     for letter, position_list in map.items():
         print(letter, position_list)
     return map
 
-def smallest_bigger_binsearch(olist, key, smallest_bigger=None):
-    # O(log(len(olist)))
-    L = 0
-    R = len(olist)
-    C = floor((L+R)/2) # middle point
-    #print("key: ",key)
-    #print("bin: ",C," ",olist[C])
-    if olist[C] > key:
-        smallest_bigger = olist[C]
-        #print("new smallest bigger: ",smallest_bigger)
-        if R - L > 1: # if there is room for searching
-            smallest_bigger = smallest_bigger_binsearch(olist[L:C], key, smallest_bigger) # look left to find smaller bigger values
-    elif olist[C] <= key: 
-        if R - L > 1: # if there is room for searching
-            smallest_bigger = smallest_bigger_binsearch(olist[C:R], key, smallest_bigger) # look right to start finding bigger values
-    return smallest_bigger
-
-def mapfind(S,D):
-    # O(len(D)*log(len(D)+len(S)+len(D)*log(len(S))) = O(len(S) + len(D)*log(len(S)*len(D)))
-    # O(N + L*log(NL))
+def smallfind(S,D):
+    # O(L*log(L) + N*A + L) = O(L*log(L) + N*A) ~ O(N + L*log(L)) if A is << N
 
     # clean and sort words (longer sooner)
     D = clean(S,D)  # O(L*log(L))
 
     # map S into a better representation (for fast lookup)
-    map = decompose(S) # O(len(S))
+    map = decompose(S) # O(len(S)*len(alphabet(S))) = O(N*A)
 
     # look if the word is a substring of S by queriend the map
-    for word in D:  # O(len(D)*...)
+    for word in D:  # O(len(D)*...) = O(L*...)
         print("CHECK: "+word)
         found_valid = False
-        index_of_last_valid_letter = -1
-        for j,letter in enumerate(word):
+        index_of_last_valid_letter = 0
+        for j,letter in enumerate(word): # O(few times...)
+            # O(1)
             print(letter)
             if letter in map:
-                where_in_S = map[letter] # positions of 'letter' in S. One or more may be 'valid'.
-                print("is present at ",where_in_S)
+                dense_occurrence_list = map[letter] # positions of 'letter' in S. One or more may be 'valid'.
                 # look for the first valid letter (the letter must be in S, and it must be
                 # it must come after the last valid letter that was found in S)
-                index_of_next_valid_letter = smallest_bigger_binsearch(where_in_S, index_of_last_valid_letter) # O(log(len(where_in_S))) ~ O(log(len(S)))
-                if index_of_next_valid_letter is None: # you did not find a next valid letter
+                index_of_next_valid_letter = dense_occurrence_list[index_of_last_valid_letter]
+                if index_of_next_valid_letter != -1:
+                    index_of_last_valid_letter = index_of_next_valid_letter
+                if index_of_last_valid_letter == -1: # you did not find a next valid letter
                     print("no valid letter was found. Stop searching for this word.")
                     break # exit the for letter in word loop, i.e. stop considering this word, it's not there
                 else: # you found a next valid letter
-                    index_of_last_valid_letter = index_of_next_valid_letter # remember this index
                     found_valid = True # you found a valid one
                     print("valid position found: ",index_of_last_valid_letter)
             else:
@@ -107,7 +97,7 @@ def mapfind(S,D):
 
 def run():
     S, D = init()             
-    res = mapfind(S,D)
+    res = smallfind(S,D)
     print("Longest substring is: "+res) if res is not None else print("No word found in the string")
 
 # execution

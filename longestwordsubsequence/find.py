@@ -1,3 +1,5 @@
+# author - Michele Piccolini (mujina93)
+
 # given a string S and a list of word D, find the
 # word (from D) which is a substring (not a consecutive
 # subsequence) of S and
@@ -5,6 +7,7 @@
 # find in S
 
 # Solution 1
+# greedy find
 
 import time # for execution time
 
