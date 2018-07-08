@@ -1,4 +1,7 @@
-/* Given a non-empty string like "Code" return a string like "CCoCodCode".
+/* 
+author: Michele Piccolini (mujina93)
+
+Given a non-empty string like "Code" return a string like "CCoCodCode".
 
 stringSplosion("Code") → "CCoCodCode"
 stringSplosion("abc") → "aababc"
