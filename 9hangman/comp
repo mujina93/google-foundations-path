@@ -1,0 +1,2 @@
+#!/bin/sh
+javac -classpath .:acm.jar Game.java HangmanCanvas.java HangmanLexicon.java

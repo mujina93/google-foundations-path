@@ -4,26 +4,15 @@ author: Michele Piccolini (mujina93)
 Hangman game class
 */
 
-import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Random;
 import java.util.Arrays;
+import acm.program.*;
 
-public class Game{
-    private HangmanLexicon _lex;
-    private long _seed;
-    private int _wordIndex;
-    private String _secretWord; // word to be guessed
-    private int _N;
-    private int[] _guessed;
-    private int _correct;
-    private int _guesses;
-    private char[] _texture; // letter to be displayed
-    private Scanner _reader;
-    private boolean _playing;
+public class Game extends ConsoleProgram { // base program: a window with a console
 
-    public Game(){
-        // initialization
+    public void init(){
+        // members initialization
         _lex = new HangmanLexicon();
         _seed = -1; // -1 for actual random
         _wordIndex = rng(0, _lex.getWordCount());
@@ -32,13 +21,23 @@ public class Game{
         _guessed = new int[_N]; // all initialized to 0
         _texture = new char[_N];
         Arrays.fill(_texture, '-'); // all dashes initially
-        _reader = new Scanner(System.in);
-        _correct = 0; // number of guessed letters
-        _guesses = 10; // number of available guesses
+        _correct = 0; // number of guessed letters (!=number of correct trials)
+        _errors = 0; // number of errors (wrong trials) so far
+        _totalGuesses = 8; // maximum starting number of available guesses
+        _guesses = _totalGuesses; // number of available guesses
+
+        // gui: add canvas
+        canvas = new HangmanCanvas();
+        add(canvas); // add canvas to the window
+        
+        // graphical settings
+        setFont("Monospace-bold-18");
     }
 
     public void run(){
-        System.out.println("Welcome to Hangman!\n");
+        canvas.reset(); // print initial state
+
+        println("Welcome to Hangman!\n");
         render();
 
         _playing = true;
@@ -46,22 +45,25 @@ public class Game{
             if(_guesses > 0){
                 Character c = getInput();
                 update(c);
-                render();
+                if(_playing){
+                    render(); // when you win, _playing=false -> don't render
+                }
             } else {
-                System.out.println("You're completely hung!");
-                System.out.println("The word was: "+_secretWord);
-                System.out.println("Game Over.");
+                println("You're completely hung!");
+                println("The word was: "+_secretWord);
+                println("Game Over.");
                 _playing = false;
             }
         }
-        // cleanup
-        _reader.close();
     }
 
     public void render(){
-        System.out.print("The word looks like this: ");
-        System.out.println(new String(_texture));
-        System.out.printf("You have %d guesses.\n",_guesses);
+        // prints updated game state on console
+        print("The word looks like this: ");
+        println(new String(_texture));
+        println(String.format("You have %d guesses.\n",_guesses));
+        // updates on canvas
+        canvas.displayWord(new String(_texture));
     }
 
     public boolean check(Character c){
@@ -74,32 +76,49 @@ public class Game{
                 foundSome = true;
             }
         }
+        if(foundSome == false){
+            _errors += 1; // 1 error done
+            _guesses -= 1; // 1 guess less left
+        }
         return foundSome;
     }
 
     public void update(Character c){
         boolean foundSome = check(c);
         if(foundSome == true){
-            System.out.println("The guess is correct!");
+            println("The guess is correct!");
         } else {
-            System.out.println("Nope");
+            println("Nope");
+            // update display with new piece of drawing
+            // (passing the character and the number of errors so far)
+            try{
+                canvas.noteIncorrectGuess(c, _errors);
+            } catch(Exception e){
+                System.out.println("Exception occurred when noting incorrect guess on canvas");
+            }
         }
         if(_correct == _N){ // victory condition
-            System.out.println("You win!");
+            println("You win!");
             _playing = false; // stop playing
+            // last render
+            canvas.displayWord(new String(_texture));
         }
     }
 
     public Character getInput(){
-        System.out.println("Guess a letter: ");
-        Character c = new Character(_reader.next().charAt(0)); // eats next token (a char)
+        String input = readLine("Guess a letter: ");
+        Character c;
+        try{
+            c = input.charAt(0); // first character
+        }catch(StringIndexOutOfBoundsException e){
+            c = Character.MIN_VALUE; // empty character
+        }
         if(Character.isLetter(c)){
             c = Character.toUpperCase(c);
         } else {
-            System.out.println("This is not a letter");
+            println("Inputted character is not a letter");
             return getInput();
         }
-        _guesses -= 1; // 1 guess spent
         return c;
     }
 
@@ -114,4 +133,20 @@ public class Game{
         }
         return n;
     }
+
+    // private members
+    private HangmanLexicon _lex;
+    private long _seed;
+    private int _wordIndex;
+    private String _secretWord; // word to be guessed
+    private int _N;
+    private int[] _guessed;
+    private int _correct;
+    private int _totalGuesses;
+    private int _guesses;
+    private int _errors;
+    private char[] _texture; // letter to be displayed
+    private boolean _playing;
+    private HangmanCanvas canvas; // canvas where to draw the hangman
+
 }

@@ -1,0 +1,3 @@
+#!/bin/bash
+javac -classpath acm.jar:. BouncingBallUsingTimer.java
+java -cp .:acm.jar BouncingBallUsingTimer
